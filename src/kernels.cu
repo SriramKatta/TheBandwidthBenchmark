@@ -404,7 +404,7 @@ __global__ void striadCuda_vec2(TBB_FLOAT *__restrict__ a,
 {
   size_t tidx = threadIdx.x + blockIdx.x * blockDim.x;
 
-  if (tidx >= N) {
+  if (tidx >= N / 2) {
     return;
   }
 
@@ -429,7 +429,7 @@ __global__ void striadCuda_vec4(TBB_FLOAT *__restrict__ a,
 {
   size_t tidx = threadIdx.x + blockIdx.x * blockDim.x;
 
-  if (tidx >= N) {
+  if (tidx >= N / 4) {
     return;
   }
 
@@ -473,7 +473,7 @@ __global__ void sdaxpyCuda_vec2(TBB_FLOAT *__restrict__ a,
 {
   size_t tidx = threadIdx.x + blockIdx.x * blockDim.x;
 
-  if (tidx >= N) {
+  if (tidx >= N / 2) {
     return;
   }
 
@@ -496,7 +496,7 @@ __global__ void sdaxpyCuda_vec4(TBB_FLOAT *__restrict__ a,
 {
   size_t tidx = threadIdx.x + blockIdx.x * blockDim.x;
 
-  if (tidx >= N) {
+  if (tidx >= N / 4) {
     return;
   }
 
@@ -518,7 +518,7 @@ __global__ void sdaxpyCuda_vec4(TBB_FLOAT *__restrict__ a,
   }
 }
 
-__device__ void warpReduce(volatile int *shared_data, size_t tidx)
+__device__ void warpReduce(volatile TBB_FLOAT *shared_data, size_t tidx)
 {
   shared_data[tidx] += shared_data[tidx + 32];
   shared_data[tidx] += shared_data[tidx + 16];
@@ -533,11 +533,16 @@ __device__ void warpReduce(volatile int *shared_data, size_t tidx)
 __global__ void sumCuda(
     TBB_FLOAT *__restrict__ a, TBB_FLOAT *__restrict__ a_out, const size_t N)
 {
-  extern __shared__ int shared_data[];
+  extern __shared__ TBB_FLOAT shared_data[];
 
   size_t tidx       = threadIdx.x;
   size_t i          = blockIdx.x * (blockDim.x * 2) + threadIdx.x;
-  shared_data[tidx] = a[i] + a[i + blockDim.x];
+  
+  TBB_FLOAT mySum = (i < N) ? a[i] : 0;
+  if (i + blockDim.x < N)
+        mySum += a[i + blockDim.x];
+
+  shared_data[tidx] = mySum;
   __syncthreads();
 
   for (int s = blockDim.x / 2; s > 32; s >>= 1) {
