@@ -61,7 +61,7 @@ void parseArguments(int argc, char **argv)
       char *end;
       errno = 0;
       N     = strtol(optarg, &end, INT_BASE);
-      N     = (N * GIGA) / (4 * sizeof(double)); // Convert GB to number of doubles
+      N     = (N * GIGA) / (4 * sizeof(TBB_FLOAT)); // Convert GB to number of doubles
       if (*end != '\0' || errno != 0) {
         FPRINTF(stderr, "Invalid numeric value for -s: %s\n", optarg);
         exit(EXIT_FAILURE);
