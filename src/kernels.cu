@@ -558,7 +558,7 @@ __global__ void sumCuda(
   }
 
   if (tidx == 0) {
-    a[blockIdx.x] = shared_data[0];
+    a_out[blockIdx.x] = shared_data[0];
   }
 }
 
